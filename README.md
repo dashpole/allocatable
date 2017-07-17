@@ -1,0 +1,13 @@
+To build binaries: make build
+To upload binaries (for use with foreachmaster): make upload
+To build and upload: make
+
+#BLAZE COMMAND for getting events:  
+blaze run cloud/kubernetes/tools:foreachmaster -- --db=prod \  
+ --cmd="export BINARY=get_events; curl https://storage.googleapis.com/allocatable/run_binary.sh | sh" \  
+ --shards=10 |& tee /tmp/foreachmaster.log  
+
+#BLAZE COMMAND for getting allocatable:  
+blaze run cloud/kubernetes/tools:foreachmaster -- --db=prod \  
+ --cmd="export BINARY=get_allocatable_metrics; curl https://storage.googleapis.com/allocatable/run_binary.sh | sh" \  
+ --shards=10 |& tee /tmp/foreachmaster.log  
