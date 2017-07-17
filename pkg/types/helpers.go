@@ -137,12 +137,16 @@ func GetClusterInfo(pods []v1.Pod, nodes []v1.Node) *ClusterInfo {
 			numPods++
 		}
 	}
+	version := ""
+	if len(nodes) > 0 {
+		version = nodes[0].Status.NodeInfo.KubeletVersion
+	}
 
 	return &ClusterInfo{
 		pods:        numPods,
 		nodes:       len(nodes),
 		cores:       int(millicores / 1000.0),
-		nodeVersion: nodes[0].Status.NodeInfo.KubeletVersion,
+		nodeVersion: version,
 	}
 }
 
