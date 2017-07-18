@@ -2,14 +2,12 @@ package main
 
 import (
 	"bufio"
-	"encoding/csv"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 
 	resourceapi "k8s.io/apimachinery/pkg/api/resource"
 
@@ -17,6 +15,7 @@ import (
 )
 
 var path = flag.String("path", "foreachmaster.log", "path to your log file")
+var outputFile = flag.String("output", "../../_output/specificClusterStats.csv", "path to output file")
 
 func main() {
 	flag.Parse()
@@ -51,7 +50,7 @@ func main() {
 	for _, cluster := range allClusterStats {
 		data = append(data, cluster.ToSlice())
 	}
-	err = toCSV("../../_output/specificClusterStats.csv", data)
+	err = types.ToCSV(*outputFile, data)
 	if err != nil {
 		fmt.Printf("Error writing output to csv: %v\n", err)
 	}
@@ -87,7 +86,7 @@ func outputClusterToCsv(clusterStatsList []types.ClusterStats, nodeStatsList []t
 		}
 	}
 	for _, output := range outputs {
-		err := toCSV(output.fileName, output.data)
+		err := types.ToCSV(output.fileName, output.data)
 		if err != nil {
 			return fmt.Errorf("Error writing output to csv: %v\n", err)
 		}
@@ -95,28 +94,11 @@ func outputClusterToCsv(clusterStatsList []types.ClusterStats, nodeStatsList []t
 	return nil
 }
 
-func toCSV(filename string, data [][]string) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	writer := csv.NewWriter(file)
-	err = writer.WriteAll(data)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func parseCluster(input []byte) types.ClusterAllocated {
 	clusterAllocated := []types.NodeAllocated{}
-	re := regexp.MustCompile(types.ClusterExpr)
-	if re.Match(input) {
-		// get the portion captured by parenthesis in the expr
-		match := re.FindSubmatch(input)[1]
-		nodes := strings.Split(string(match), "\\n")
-		for _, node := range nodes {
+	lines, err := types.ParseForeachMasterLine(input)
+	if err == nil {
+		for _, node := range lines {
 			nodeAllocated := parseNode(node)
 			if nodeAllocated != nil {
 				clusterAllocated = append(clusterAllocated, *nodeAllocated)

@@ -1,7 +1,10 @@
 package types
 
 import (
+	"encoding/csv"
 	"fmt"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -21,6 +24,20 @@ func (c ClusterStats) ToSlice() []string {
 		strconv.Itoa(int(c.TotalClusterCPUOverage)),
 		strconv.Itoa(int(c.TotalClusterMemoryOverate)),
 	}
+}
+
+func ToCSV(filename string, data [][]string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	writer := csv.NewWriter(file)
+	err = writer.WriteAll(data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (na NodeAllocated) GetMemoryAllocatableReservation() resourceapi.Quantity {
@@ -122,7 +139,29 @@ func (na *NodeAllocated) GetCPUPercent() int64 {
 }
 
 func ParseClusterInfo(input string) (*ClusterInfo, error) {
-	return nil, fmt.Errorf("Not implemented")
+	re := regexp.MustCompile(clusterInfoExpr)
+	if re.MatchString(input) {
+		submatches := re.FindStringSubmatch(input)
+		pods, err := strconv.Atoi(submatches[1])
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := strconv.Atoi(submatches[2])
+		if err != nil {
+			return nil, err
+		}
+		cores, err := strconv.Atoi(submatches[3])
+		if err != nil {
+			return nil, err
+		}
+		return &ClusterInfo{
+			pods:        pods,
+			nodes:       nodes,
+			cores:       cores,
+			nodeVersion: submatches[4],
+		}, nil
+	}
+	return nil, fmt.Errorf("Unable to parse line, clusterInfo: %s did not match expr: %s", string(input), clusterInfoExpr)
 }
 
 func GetClusterInfo(pods []v1.Pod, nodes []v1.Node) *ClusterInfo {
@@ -154,8 +193,52 @@ func (c *ClusterInfo) String() string {
 	return fmt.Sprintf(clusterInfoTemplate, c.pods, c.nodes, c.cores, c.nodeVersion)
 }
 
-func ParseDisruptiveEventList(input string) (DisruptiveEventList, error) {
-	return nil, fmt.Errorf("Not implemented")
+func (c *ClusterInfo) ToSlice() []string {
+	return []string{strconv.Itoa(c.pods), strconv.Itoa(c.nodes), strconv.Itoa(c.cores), c.nodeVersion}
+}
+
+func ParseDisruptiveEventList(input string) DisruptiveEventList {
+	events := strings.Split(input, ";")
+	eventList := []v1.Event{}
+	for _, eventString := range events {
+		event, err := ParseEvent(eventString)
+		if err == nil {
+			eventList = append(eventList, *event)
+		}
+	}
+	return AggregateEvents(eventList)
+}
+
+func ParseEvent(input string) (*v1.Event, error) {
+	re := regexp.MustCompile(eventExpr)
+	if re.MatchString(input) {
+		submatches := re.FindStringSubmatch(input)
+		count, err := strconv.ParseInt(submatches[3], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		return &v1.Event{
+			Reason:  submatches[1],
+			Message: submatches[2],
+			Count:   int32(count),
+		}, nil
+	}
+	return nil, fmt.Errorf("Unable to parse event, input: %s did not match expr: %s", string(input), eventExpr)
+}
+
+func AggregateEvents(inputEvents []v1.Event) []v1.Event {
+	outputEvents := []v1.Event{}
+	eventMap := make(map[string]int32)
+	for _, event := range inputEvents {
+		eventMap[event.Reason] += event.Count
+	}
+	for k, v := range eventMap {
+		outputEvents = append(outputEvents, v1.Event{
+			Reason:  k,
+			Count:   v,
+		})
+	}
+	return outputEvents
 }
 
 func GetDisruptiveEventList(events []v1.Event) DisruptiveEventList {
@@ -177,5 +260,21 @@ func (d DisruptiveEventList) String() string {
 		eventString += fmt.Sprintf(eventTemplate, event.Reason, event.Message, event.Count)
 		eventString += ";"
 	}
-	return strings.TrimSuffix(eventString, ",")
+	return strings.TrimSuffix(eventString, ";")
+}
+
+func (d DisruptiveEventList) ToSlice() []string {
+	eventSlice := []string{}
+	for _, event := range d {
+		eventSlice = append(eventSlice, event.Reason, strconv.FormatInt(int64(event.Count), 10))
+	}
+	return eventSlice
+}
+
+func ParseForeachMasterLine(input []byte) ([]string, error) {
+	re := regexp.MustCompile(clusterExpr)
+	if re.Match(input) {
+		return strings.Split(string(re.FindSubmatch(input)[1]), "\\n"), nil
+	}
+	return []string{}, fmt.Errorf("Unable to parse foreachmaster, input: %s did not match expr: %s", string(input), clusterExpr)
 }

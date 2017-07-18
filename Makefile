@@ -3,11 +3,12 @@ all:
 	make upload
 
 build:
-	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/get_allocatable_metrics pkg/scrape/scrape_allocatable_metrics.go
+	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/get_allocatable_metrics pkg/allocatable/scrape/scrape_allocatable.go
+	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/allocatable_analysis pkg/allocatable/process/process_allocatable.go
 
-	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/get_events pkg/events/scrape_events.go
+	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/get_events pkg/events/scrape/scrape_events.go
+	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/process_events pkg/events/process/process_events.go
 
-	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/allocatable_analysis pkg/analysis/allocatable_analysis.go
 
 upload: 
 	gsutil cp ./scripts/run_binary.sh gs://allocatable

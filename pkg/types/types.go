@@ -44,16 +44,17 @@ type NodeAllocated struct {
 	CPURequests       resourceapi.Quantity
 }
 
-const ClusterExpr = `^\{.*\} output: \"(.*)\"$`
+const clusterExpr = `^\{.*\} output: \"(.*)\"$`
+
 const NodeExpr = `^NodeName: (.*), Memory: (.*) / (.*) = .*, CPU: (.*) / (.*) = .*$`
+const allocatableTemplate = "NodeName: %s, Memory: %s / %s = %v%%, CPU: %s / %s = %v%%"
 
 type reservedBracket struct {
 	threshold resourceapi.Quantity
 	reserved  resourceapi.Quantity
 }
 
-const allocatableTemplate = "NodeName: %s, Memory: %s / %s = %v%%, CPU: %s / %s = %v%%"
-
+const clusterInfoExpr = `^Pods: (.*), Nodes: (.*), Cores: (.*), NodeVersion: (.*)$`
 const clusterInfoTemplate = "Pods: %d, Nodes: %d, Cores: %d, NodeVersion: %s"
 
 type ClusterInfo struct {
@@ -63,6 +64,7 @@ type ClusterInfo struct {
 	nodeVersion string
 }
 
+const eventExpr = `^Reason: (.*), Message: (.*), Count: (.*)$`
 const eventTemplate = "Reason: %v, Message: %v, Count: %v"
 
 type DisruptiveEventList []v1.Event
