@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/dashpole/allocatable/pkg/types"
+	"github.com/dashpole/allocatable/pkg/events/types"
 	"k8s.io/api/core/v1"
 )
 

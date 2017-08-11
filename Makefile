@@ -3,11 +3,11 @@ all:
 	make upload
 
 build:
-	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/get_allocatable_metrics pkg/allocatable/scrape/scrape_allocatable.go
-	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/allocatable_analysis pkg/allocatable/process/process_allocatable.go
+	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/get_allocatable_metrics pkg/allocatable/scrape/*
+	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/allocatable_analysis pkg/allocatable/process/*
 
-	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/get_events pkg/events/scrape/scrape_events.go
-	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/process_events pkg/events/process/process_events.go
+	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/get_events pkg/events/scrape/*
+	go build --ldflags '-linkmode external -extldflags "-static"' -o _output/process_events pkg/events/process/*
 
 
 upload: 

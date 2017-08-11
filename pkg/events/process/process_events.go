@@ -8,7 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dashpole/allocatable/pkg/types"
+	"github.com/dashpole/allocatable/pkg/common"
+	"github.com/dashpole/allocatable/pkg/events/types"
 )
 
 var path = flag.String("path", "foreachmaster.log", "path to your log file")
@@ -26,7 +27,7 @@ func main() {
 	r := bufio.NewReaderSize(file, 512*1024)
 	line, bufferToSmall, err := r.ReadLine()
 	for err == nil && !bufferToSmall {
-		clusterLines, parseErr := types.ParseForeachMasterLine(line)
+		_, clusterLines, parseErr := common.ParseForeachMasterLine(line)
 		if parseErr == nil {
 			/*
 				Lines are as follows:
@@ -57,7 +58,7 @@ func main() {
 		return
 	}
 
-	err = types.ToCSV(*outputFile, data)
+	err = common.ToCSV(*outputFile, data)
 	if err != nil {
 		fmt.Printf("Error writing output to csv: %v\n", err)
 	}

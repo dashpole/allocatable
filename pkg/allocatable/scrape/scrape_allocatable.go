@@ -6,10 +6,10 @@ import (
 	"os/exec"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/dashpole/allocatable/pkg/types"
+	"github.com/dashpole/allocatable/pkg/allocatable/types"
 )
 
 const retryNumber = 2
@@ -81,7 +81,6 @@ func getNodeAllocatedList(pods []v1.Pod, nodes []v1.Node) ([]types.NodeAllocated
 	}
 	return nodeAllocatedList, nil
 }
-
 
 // PodRequestsAndLimits returns a dictionary of all defined resources summed up for all
 // containers of the pod.
